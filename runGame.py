@@ -46,7 +46,7 @@ def randomLegalMove(board):
 def moveIsPromoting(board,uci_move):
     try:
         for i in board.legal_moves:
-            if uci_move in str(i) and len(uci_move) != len(str(i)):
+            if len(uci_move) == 4 and uci_move in str(i) and len(str(i)) == 5:
                 return True
         return False
     except:
@@ -134,13 +134,11 @@ while (not user_input == "quit") and not board.is_game_over():
             playerMoveCount+=1
             doAIMove(board)
             
-    except ValueError as e:
+    except Exception as e:
         if e.message.startswith("illegal uci"):
             print "Illegal Move, did you type the correct squares?"
         else:
             print "Incorrect move syntax."
-    except IndexError:
-        print "No moves have been made yet, can't undo."
 
 #if we get here, game is over. Check winner and make announcement
 print "Game over!"
