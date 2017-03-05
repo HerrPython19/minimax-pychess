@@ -8,9 +8,9 @@ class alphaBetaMinimaxAI:
         self.currMove = None
         #Keep aggro/defense between 0 and 1
         #High aggression - likes boards that attack player
-        self.aggressiveness = .3
+        self.aggressiveness = 0
         #High defense - likes boards that aren't attacking computer
-        self.defensiveness = 0.0
+        self.defensiveness = 0
         self.timer_leeway = 5 #seconds. used to give program time to return
                                 #after actual time limit runs out.
 
@@ -81,7 +81,7 @@ class alphaBetaMinimaxAI:
 
     def piecesProtected(self):
         total = 0
-        piece_values = {"p":.5,"b":2,"n":2,"r":3,"q":4,"k":0}
+        piece_values = {"p":.5,"b":1.5,"n":1.5,"r":2.5,"q":3,"k":0}
         for square in range(64):
             piece = self.board.piece_at(square)
             if piece != None:
@@ -90,13 +90,13 @@ class alphaBetaMinimaxAI:
                     if self.board.is_attacked_by(self.computer,square):
                         total += piece_values[str(piece).lower()]
                     else:
-                        total -= piece_values[str(piece).lower()]+self.defensiveness
+                        total -= piece_values[str(piece).lower()]
                 else:
                     #if there is protection on player piece
                     if self.board.is_attacked_by(piece.color,square):
                         total -= piece_values[str(piece).lower()]
                     else:
-                        total += piece_values[str(piece).lower()]+self.aggressiveness
+                        total += piece_values[str(piece).lower()]
         return total
 
     def advancingPieces(self):
@@ -148,7 +148,7 @@ class alphaBetaMinimaxAI:
         pieceAdvancement = self.advancingPieces()
         #where are the attacks happening, and how many?
         attacks = self.totalAttacks()
-        return pieceTotal+checkTotal+checkmateTotal+openSpace+protectionValue+pieceAdvancement+attacks
+        return round(pieceTotal+checkTotal+checkmateTotal+openSpace+protectionValue+pieceAdvancement+attacks,3)
 
     #requires move as a uci string, not a move object
     def badMove(self, move):
@@ -203,6 +203,20 @@ class alphaBetaMinimaxAI:
 
         return sortedMoves + afterCapture + afterForward
 
+    def numPieces(self):
+        #returns [numWhite,numBlack]
+        totalWhite = 0
+        totalBlack = 0
+        for square in range(64):
+            piece = self.board.piece_at(square)
+            if piece != None:
+                if piece.color:
+                    totalWhite += 1
+                else:
+                    totalBlack += 1
+
+        return [totalWhite,totalBlack]
+
     def genGoodMoves(self,depth=0):
         moves = []
         badmoves = []
@@ -212,8 +226,20 @@ class alphaBetaMinimaxAI:
             else:
                 badmoves.append(str(item))
 
+        #if there are no good moves, but still legal moves, return all moves
         if len(moves) == 0 and len(self.board.legal_moves) != 0:
             return badmoves
+
+        #if there aren't many pieces on the board, allow bad moves
+        num_pieces = self.numPieces()
+        if self.board.turn:
+            if num_pieces[0] < 7:
+                return moves + badmoves
+        else:
+            if num_pieces[1] < 7:
+                return moves + badmoves
+
+        #only sort the moves at a low depth, it gets less important as we descend
         if depth < 3:
             return self.sortMoves(moves)
         else:

@@ -202,3 +202,4 @@ elif int(result[0]) > int(result[1]):
     print "White won!"
 else:
     print "Black won!"
+raw_input("Press enter to quit.\n")
