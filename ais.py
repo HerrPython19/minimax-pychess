@@ -81,7 +81,7 @@ class alphaBetaMinimaxAI:
 
     def piecesProtected(self):
         total = 0
-        piece_values = {"p":.5,"b":2,"n":2,"r":5,"q":7,"k":0}
+        piece_values = {"p":.5,"b":2,"n":2,"r":3,"q":4,"k":0}
         for square in range(64):
             piece = self.board.piece_at(square)
             if piece != None:
@@ -90,13 +90,13 @@ class alphaBetaMinimaxAI:
                     if self.board.is_attacked_by(self.computer,square):
                         total += piece_values[str(piece).lower()]
                     else:
-                        total -= piece_values[str(piece).lower()]
+                        total -= piece_values[str(piece).lower()]+self.defensiveness
                 else:
                     #if there is protection on player piece
                     if self.board.is_attacked_by(piece.color,square):
                         total -= piece_values[str(piece).lower()]
                     else:
-                        total += piece_values[str(piece).lower()]
+                        total += piece_values[str(piece).lower()]+self.aggressiveness
         return total
 
     def advancingPieces(self):
@@ -121,7 +121,7 @@ class alphaBetaMinimaxAI:
 
     def totalAttacks(self):
         total = 0
-        piece_values = {"p":1,"b":1.2,"n":1.2,"r":1.4,"q":4,"k":.1}
+        piece_values = {"p":1,"b":1.2,"n":1.2,"r":1.4,"q":2,"k":.1}
         for square in range(64):
             piece = self.board.piece_at(square)
             if piece != None:
