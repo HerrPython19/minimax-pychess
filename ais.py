@@ -1,4 +1,4 @@
-import time
+import time, chess
 class alphaBetaMinimaxAI:
     def __init__(self, computer, board, depth=4):
         #true if computer is white, false if black
@@ -6,8 +6,11 @@ class alphaBetaMinimaxAI:
         self.board = board
         self.depth = depth
         self.currMove = None
-        self.aggressiveness = 5
-        self.defensiveness = 0
+        #Keep aggro/defense between 0 and 1
+        #High aggression - likes boards that attack player
+        self.aggressiveness = .3
+        #High defense - likes boards that aren't attacking computer
+        self.defensiveness = 0.0
         self.timer_leeway = 5 #seconds. used to give program time to return
                                 #after actual time limit runs out.
 
@@ -76,17 +79,6 @@ class alphaBetaMinimaxAI:
         else:
             return False
 
-    #Don't know if this will actually help ai, unused right now
-    def offenseDefense(self):
-        if self.capturedPiece():
-            #if it's the comp's turn, player captured ai's piece
-            if self.board.turn == self.computer:
-                return -self.defensiveness
-            else:
-                return self.aggressiveness
-        else:
-            return 0
-
     def piecesProtected(self):
         total = 0
         piece_values = {"p":.5,"b":2,"n":2,"r":5,"q":7,"k":0}
@@ -106,7 +98,41 @@ class alphaBetaMinimaxAI:
                     else:
                         total += piece_values[str(piece).lower()]
         return total
-        
+
+    def advancingPieces(self):
+        total = 0
+        piece_values = {"p":.4,"b":.5,"n":.5,"r":.4,"q":.4,"k":.1}
+        for square in range(64):
+            piece = self.board.piece_at(square)
+            rank = int(chess.SQUARE_NAMES[square][1])
+            if piece != None:
+                pName = str(piece).lower()
+                if piece.color == self.computer:
+                    if self.computer:
+                        total += piece_values[pName]*rank
+                    else:
+                        total += piece_values[pName]*(9-rank)
+                else:
+                    if self.computer:
+                        total -= piece_values[pName]*(9-rank)
+                    else:
+                        total -= piece_values[pName]*rank
+        return total
+
+    def totalAttacks(self):
+        total = 0
+        piece_values = {"p":1,"b":1.2,"n":1.2,"r":1.4,"q":4,"k":.1}
+        for square in range(64):
+            piece = self.board.piece_at(square)
+            if piece != None:
+                if piece.color == self.computer:
+                    total -= len(self.board.attackers(not self.computer,
+                                                      square))*piece_values[str(piece).lower()]+self.defensiveness
+                else:
+                    total += len(self.board.attackers(self.computer,
+                                                      square))*piece_values[str(piece).lower()]+self.aggressiveness
+        return total
+                    
     def staticEval(self):
         #sums pieces on board.
         pieceTotal = self.sumPieces()
@@ -114,12 +140,15 @@ class alphaBetaMinimaxAI:
         checkTotal = self.check()
         #Checkmate? Could be really good or really bad
         checkmateTotal = self.checkmate()
-        #Returns number based off if a piece was captured, and how
-        #offensive/defensive we are
-        #offDef = self.offenseDefense()
+        #how much open space do we have available
         openSpace = self.sumOpenSpace()
+        #are pieces protected?
         protectionValue = self.piecesProtected()
-        return pieceTotal+checkTotal+checkmateTotal+openSpace+protectionValue
+        #how advanced are the pieces?
+        pieceAdvancement = self.advancingPieces()
+        #where are the attacks happening, and how many?
+        attacks = self.totalAttacks()
+        return pieceTotal+checkTotal+checkmateTotal+openSpace+protectionValue+pieceAdvancement+attacks
 
     #requires move as a uci string, not a move object
     def badMove(self, move):
@@ -133,10 +162,9 @@ class alphaBetaMinimaxAI:
         return total
 
     def backAndForth(self,move):
-        if len(self.board.stack) > 1:
-            playerMove = self.board.pop().uci()
-            pastMove = self.board.peek().uci()
-            self.board.push_uci(playerMove)
+        stackLen = len(self.board.move_stack)
+        if stackLen > 1:
+            pastMove = self.board.move_stack[stackLen-2].uci()
             if pastMove[2:] + pastMove[:2] == move:
                 return True
             else:
@@ -145,11 +173,9 @@ class alphaBetaMinimaxAI:
             return False
 
     def samePieceTwice(self, move):
-        if len(self.board.stack) > 1:
-            playerMove = self.board.pop().uci()
-            pastMove = self.board.peek().uci()
-            self.board.push_uci(playerMove)
-            if pastMove[2:] == move[:2]:
+        stackLen = len(self.board.move_stack)
+        if stackLen > 1:
+            if self.board.move_stack[stackLen-2].uci()[2:] == move[:2]:
                 return True
             else:
                 return False
@@ -163,12 +189,35 @@ class alphaBetaMinimaxAI:
             mytime = time.time()-fullstart
         return mytime
 
-    def genGoodMoves(self):
+    def sortMoves(self,moves):
+        sortedMoves = []
+        afterCapture = []
+        afterForward = []
+        for move in moves:
+            if self.board.is_capture(chess.Move.from_uci(move)):
+                sortedMoves.append(move)
+            elif move[3] > move[1]:
+                afterCapture.append(move)
+            else:
+                afterForward.append(move)
+
+        return sortedMoves + afterCapture + afterForward
+
+    def genGoodMoves(self,depth=0):
         moves = []
+        badmoves = []
         for item in self.board.legal_moves:
             if self.badMove(str(item)) <= 0:
                 moves.append(str(item))
-        return moves
+            else:
+                badmoves.append(str(item))
+
+        if len(moves) == 0 and len(self.board.legal_moves) != 0:
+            return badmoves
+        if depth < 3:
+            return self.sortMoves(moves)
+        else:
+            return moves
         
 
     def alphaBetaMinimax(self,move=None,alpha=-999999,beta=999999,depth=0,fullstart=0,timelimit=-1):
@@ -180,7 +229,7 @@ class alphaBetaMinimaxAI:
         if depth != 0:
             self.board.push_uci(move)
             
-        moves = self.genGoodMoves()
+        moves = self.genGoodMoves(depth)
         
         if depth == 0 and len(moves) == 0:
                 return ["",""]
