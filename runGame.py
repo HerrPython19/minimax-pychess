@@ -58,7 +58,7 @@ def moveIsPromoting(board,uci_move):
 #when we update the ai.
 def getAIMove(ai):
     global debugging
-    timelimit = -1 #seconds. Is NOT a guarantee that it will finish in time
+    timelimit = 90 #seconds. Is NOT a guarantee that it will finish in time
     move = ai.getMove(timelimit)
     if debugging:
         print move
@@ -202,4 +202,7 @@ elif int(result[0]) > int(result[1]):
     print "White won!"
 else:
     print "Black won!"
+
+print "Final board:"
+printBoard(board,player)
 raw_input("Press enter to quit.\n")

@@ -13,6 +13,7 @@ class alphaBetaMinimaxAI:
         self.defensiveness = 0
         self.timer_leeway = 5 #seconds. used to give program time to return
                                 #after actual time limit runs out.
+        self.is_endgame = None
 
     def sumPieces(self):
         total = 0
