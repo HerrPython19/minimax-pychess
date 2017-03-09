@@ -6,67 +6,72 @@ class alphaBetaMinimaxAI:
         self.board = board
         self.depth = depth
         self.currMove = None
-        #Keep aggro/defense between 0 and 1
-        #High aggression - likes boards that attack player
-        self.aggressiveness = 0
-        #High defense - likes boards that aren't attacking computer
-        self.defensiveness = 0
-        self.timer_leeway = 5 #seconds. used to give program time to return
-                                #after actual time limit runs out.
         self.is_endgame = None
+        self.pieces = []
+        #weights
+        self.materialWeight = 2
+        self.spaceWeight = .8
+        self.protectionWeight = 1.2
+        self.advancementWeight = 1
+        self.attackWeight = .1
+        self.controlWeight = 1
 
     def sumPieces(self):
         total = 0
-        piece_values = {"p":1,"b":4,"n":4,"r":7,"q":10,"k":0}
-        for square in str(self.board):
-            if square.lower() in "rnbqkp":
-                #if the piece is black
-                if square.islower():
-                    #if the computer is white, subtract score of piece
-                    if self.computer:
-                        total -= piece_values[square.lower()]
-                    #if computer is black, add score
-                    else:
-                        total += piece_values[square.lower()]
-                #same here. white and white, add. white and black, subtract.
+        piece_values = {"p":1,"b":3,"n":3,"r":5,"q":9,"k":0}
+        for item in self.pieces:
+            piece = item[0]
+            #if piece is black
+            if not piece.color:
+                #if computer is white, subtract, otherwise add
+                if self.computer:
+                    total -= piece_values[str(piece).lower()]
                 else:
-                    if self.computer:
-                        total += piece_values[square.lower()]
-                    else:
-                        total -= piece_values[square.lower()]
+                    total += piece_values[str(piece).lower()]
+            else:
+                #white and white, add, black and black, subtract
+                if self.computer:
+                    total += piece_values[str(piece).lower()]
+                else:
+                    total -= piece_values[str(piece).lower()]
+
         return total
 
     def checkmate(self):
         if self.board.is_checkmate():
             if self.board.turn == self.computer:
-                return -99999
+                return -1
             else:
-                return 99999
+                return 1
         else:
             return 0
 
     def check(self):
         if self.board.is_check():
             if self.board.turn == self.computer:
-                return -15
+                return -1
             else:
-                return 15
+                return 1
         else:
             return 0
 
     def sumOpenSpace(self):
-        total = 0
+        computerValue = 0
+        playerValue = 0
         if self.board.turn == self.computer:
-            total += len(self.board.legal_moves)/10.0
+            computerValue += len(self.board.legal_moves)
             self.board.turn = not self.board.turn
-            total -= len(self.board.legal_moves)/10.0
+            playerValue += len(self.board.legal_moves)
             self.board.turn = not self.board.turn
         else:
-            total -= len(self.board.legal_moves)/10.0
+            playerValue += len(self.board.legal_moves)
             self.board.turn = not self.board.turn
-            total += len(self.board.legal_moves)/10.0
+            computerValue += len(self.board.legal_moves)
             self.board.turn = not self.board.turn
-        return total
+
+        if playerValue == 0:
+            playerValue = 1
+        return float(computerValue)/playerValue
 
     def capturedPiece(self):
         if len(self.board.stack) > 1:
@@ -82,74 +87,159 @@ class alphaBetaMinimaxAI:
 
     def piecesProtected(self):
         total = 0
-        piece_values = {"p":.5,"b":1.5,"n":1.5,"r":2.5,"q":3,"k":0}
-        for square in range(64):
-            piece = self.board.piece_at(square)
-            if piece != None:
-                if piece.color == self.computer:
-                    #if there is protection on ai piece
-                    if self.board.is_attacked_by(self.computer,square):
-                        total += piece_values[str(piece).lower()]
-                    else:
-                        total -= piece_values[str(piece).lower()]
+        piece_values = {"p":.1,"b":.2,"n":.2,"r":.4,"q":.6,"k":0}
+        for item in self.pieces:
+            piece = item[0]
+            square = item[1]
+            if piece.color == self.computer:
+                #if there is protection on ai piece
+                if self.board.is_attacked_by(self.computer,square):
+                    total += piece_values[str(piece).lower()]
                 else:
-                    #if there is protection on player piece
-                    if self.board.is_attacked_by(piece.color,square):
-                        total -= piece_values[str(piece).lower()]
-                    else:
-                        total += piece_values[str(piece).lower()]
+                    total -= piece_values[str(piece).lower()]
+            else:
+                #if there is protection on player piece
+                if self.board.is_attacked_by(piece.color,square):
+                    total -= piece_values[str(piece).lower()]
+                else:
+                    total += piece_values[str(piece).lower()]
+
         return total
 
     def advancingPieces(self):
         total = 0
-        piece_values = {"p":.4,"b":.5,"n":.5,"r":.4,"q":.4,"k":.1}
-        for square in range(64):
-            piece = self.board.piece_at(square)
+        piece_values = {"p":.3,"b":.6,"n":.6,"r":.4,"q":.4,"k":.1}
+        file_values = {"a":3,"b":4,"c":5,"d":6,"e":6,"f":5,"g":4,"h":3}
+        for item in self.pieces:
+            piece = item[0]
+            square = item[1]
             rank = int(chess.SQUARE_NAMES[square][1])
-            if piece != None:
-                pName = str(piece).lower()
-                if piece.color == self.computer:
-                    if self.computer:
-                        total += piece_values[pName]*rank
-                    else:
-                        total += piece_values[pName]*(9-rank)
+            pfile = file_values[chess.SQUARE_NAMES[square][0]]
+            pName = str(piece).lower()
+            if piece.color == self.computer:
+                if self.computer:
+                    total += piece_values[pName]*rank
                 else:
-                    if self.computer:
-                        total -= piece_values[pName]*(9-rank)
-                    else:
-                        total -= piece_values[pName]*rank
+                    total += piece_values[pName]*(9-rank)
+            else:
+                if self.computer:
+                    total -= piece_values[pName]*(9-rank)
+                else:
+                    total -= piece_values[pName]*rank
+
         return total
+
+    def centerControl(self):
+        total = 0
+        coreCenter = [chess.E4,chess.D4,chess.E5,chess.D5]
+        outerCenter = [chess.C4,chess.C5,chess.D3,chess.D6,
+                       chess.E3,chess.E6,chess.F4,chess.F5]
+
+        for item in self.pieces:
+            piece = item[0]
+            square = item[1]
+            if square in coreCenter:
+                if piece.color == self.computer:
+                    total += 1
+                else:
+                    total -= 1
+            if square in outerCenter:
+                if piece.color == self.computer:
+                    total += .5
+                else:
+                    total -= .5
+                    
+        return total
+
+    def genAttackingSquares(self,attackers):
+        count = 63
+        squares = []
+        ranks = str(attackers).split("\n")
+        for i in ranks:
+            for j in i[::-1]:
+                if j == "1":
+		    squares.append(count)
+		if j != " " and j != "\n":
+		    count -= 1
+
+        return squares
+
+    def pawnsAttackingPiece(self, squares):
+        pawnSpots = []
+        for i in squares:
+            piece = self.board.piece_at(i)
+            if str(piece).lower() == "p":
+                pawnSpots.append(i)
+                
+        return pawnSpots
 
     def totalAttacks(self):
         total = 0
         piece_values = {"p":1,"b":1.2,"n":1.2,"r":1.4,"q":2,"k":.1}
+        for item in self.pieces:
+            piece = item[0]
+            square = item[1]
+            if piece.color == self.computer:
+                attacks = self.board.attackers(not self.computer, square)
+                #we need to adjust for pieces that are being attacked by lesser/greater pieces
+                squares = self.genAttackingSquares(attacks)
+                attackingPawns = self.pawnsAttackingPiece(squares)
+                if str(piece).lower() != "p" and attackingPawns != []:
+                    total -= 1.5*len(attackingPawns)
+                total -= len(attacks)*piece_values[str(piece).lower()]
+            else:
+                attacks = self.board.attackers(self.computer, square)
+                #we need to adjust for pieces that are being attacked by lesser/greater pieces
+                squares = self.genAttackingSquares(attacks)
+                attackingPawns = self.pawnsAttackingPiece(squares)
+                if str(piece).lower() != "p" and attackingPawns != []:
+                    total += 1.5*len(attackingPawns)
+                total += len(attacks)*piece_values[str(piece).lower()]
+
+        return total
+
+    def isEndgame(self):
+        if len(self.board.stack) >= 70:
+            return True
+        return False
+
+    def endgameMultiplier(self):
+        if self.isEndgame():
+            return 2
+        return 1
+
+    def setPieces(self):
+        self.pieces = []
         for square in range(64):
             piece = self.board.piece_at(square)
             if piece != None:
-                if piece.color == self.computer:
-                    total -= len(self.board.attackers(not self.computer,
-                                                      square))*piece_values[str(piece).lower()]+self.defensiveness
-                else:
-                    total += len(self.board.attackers(self.computer,
-                                                      square))*piece_values[str(piece).lower()]+self.aggressiveness
-        return total
+                self.pieces.append((piece,square))
                     
     def staticEval(self):
+        checkWeight = 10
+        checkmateWeight = 9999
+        
+        self.setPieces()
         #sums pieces on board.
-        pieceTotal = self.sumPieces()
+        pieceTotal = self.sumPieces()*self.materialWeight
         #are we in check?
-        checkTotal = self.check()
+        checkTotal = self.check()*checkWeight
         #Checkmate? Could be really good or really bad
-        checkmateTotal = self.checkmate()
+        checkmateTotal = self.checkmate()*checkmateWeight
         #how much open space do we have available
-        openSpace = self.sumOpenSpace()
+        openSpace = self.sumOpenSpace()*self.spaceWeight
         #are pieces protected?
-        protectionValue = self.piecesProtected()
+        protectionValue = self.piecesProtected()*self.protectionWeight
         #how advanced are the pieces?
-        pieceAdvancement = self.advancingPieces()
+        pieceAdvancement = self.advancingPieces()*self.advancementWeight
         #where are the attacks happening, and how many?
-        attacks = self.totalAttacks()
-        return round(pieceTotal+checkTotal+checkmateTotal+openSpace+protectionValue+pieceAdvancement+attacks,3)
+        attacks = self.totalAttacks()*self.attackWeight
+        #control of the center, very important
+        control = self.centerControl()*self.controlWeight
+        
+        return [pieceTotal,checkTotal,checkmateTotal,openSpace,
+                protectionValue,pieceAdvancement,attacks,
+                control,self.board.fen()]
 
     #requires move as a uci string, not a move object
     def badMove(self, move):
@@ -158,8 +248,6 @@ class alphaBetaMinimaxAI:
         total = 0
         if self.backAndForth(move):
             total += 5
-        if self.samePieceTwice(move):
-            total += 2
         return total
 
     def backAndForth(self,move):
@@ -245,9 +333,18 @@ class alphaBetaMinimaxAI:
             return self.sortMoves(moves)
         else:
             return moves
-        
+
+    def getSum(self,result):
+        if result == [-999999] or result == [999999]:
+            return result[0]
+        total = sum(result[:len(result)-1])
+        return total
 
     def alphaBetaMinimax(self,move=None,alpha=-999999,beta=999999,depth=0,fullstart=0,timelimit=-1):
+        if alpha == -999999:
+            alpha = [-999999]
+        if beta == 999999:
+            beta = [999999]
         #debugging data
         startTime = time.time()
         nodesVisited = 0 if depth == 0 else 1
@@ -272,7 +369,7 @@ class alphaBetaMinimaxAI:
                 for item in moves:
                     result, future_move,x,y = self.alphaBetaMinimax(item,alpha,beta,depth+1,fullstart,timelimit)
                     nodesVisited += x
-                    if result > alpha:
+                    if self.getSum(result) > self.getSum(alpha):
                         alpha = result
                         bestMove = item
                     if (timelimit > 0 and y > timelimit) or alpha >= beta:
@@ -288,7 +385,7 @@ class alphaBetaMinimaxAI:
                 for item in moves:
                     result, future_move,x,y = self.alphaBetaMinimax(item,alpha,beta,depth+1,fullstart,timelimit)
                     nodesVisited += x
-                    if result < beta:
+                    if self.getSum(result) < self.getSum(beta):
                         beta = result
                         bestMove = item
                     if (timelimit > 0 and y > timelimit) or beta <= alpha:
@@ -299,9 +396,7 @@ class alphaBetaMinimaxAI:
 
     def getMove(self, t_limit=0):
         if t_limit > 0:
-            if t_limit < self.timer_leeway:
-                t_limit = self.timer_leeway + 1
-            move = self.alphaBetaMinimax(fullstart=time.time(),timelimit=t_limit-self.timer_leeway)
+            move = self.alphaBetaMinimax(fullstart=time.time(),timelimit=t_limit)
         else:
             move = self.alphaBetaMinimax()
         self.currMove = move
