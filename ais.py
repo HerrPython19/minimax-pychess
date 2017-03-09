@@ -9,12 +9,12 @@ class alphaBetaMinimaxAI:
         self.is_endgame = None
         self.pieces = []
         #weights
-        self.materialWeight = 2
-        self.spaceWeight = .8
-        self.protectionWeight = 1.2
-        self.advancementWeight = 1
-        self.attackWeight = .1
-        self.controlWeight = 1
+        self.materialWeight = 1.201216091428063
+        self.spaceWeight = 2.809652094934021
+        self.protectionWeight = 2.6325885338939976
+        self.advancementWeight = 2.652340355176336
+        self.attackWeight = 0.33738319016304474
+        self.controlWeight = 2.9840707999186984
 
     def sumPieces(self):
         total = 0
