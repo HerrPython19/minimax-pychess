@@ -15,7 +15,7 @@ def createPopulation(amount):
         chromo = []
         for weight in range(6):
             chromo.append(random.random()*3)
-        chromos.append((chromo,0))
+        chromos.append([chromo,0])
     return chromos
 
 #reads through a random game.
