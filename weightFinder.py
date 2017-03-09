@@ -23,7 +23,7 @@ def createPopulation(amount):
 def fitness(chromo, game, engine):
     board = chess.Board()
     
-    randstart = random.randint(0,len(game)-15)
+    randstart = random.randint(0,len(game)-25)
     randend=randstart+15
     #set up game
     moveindex = 0
