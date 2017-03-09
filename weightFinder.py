@@ -50,7 +50,7 @@ def fitness(chromo, game, engine):
         sf_best = engine.go(movetime=2000)[0].uci()
         if my_best == sf_best:
             correct += 1
-        if my_best[:2] == sf_best[:2] or my_best[2:] == sf_best[2:]:
+        elif my_best[:2] == sf_best[:2] or my_best[2:] == sf_best[2:]:
             correct += .25
         board.push_uci(move)
         myai.computer = not myai.computer
@@ -135,18 +135,19 @@ def do_ga():
         while True:
             for chromo in mychromos:
                 chromo[1] = fitness(chromo[0],randomGame(),engine)
-
-            #sort based on fitness
-            mychromos = sorted(mychromos,key=lambda fit_level:chromo[1])
-            #compare to saved chromos and update
-            bestchromo = mychromos[0]
-            worstchromo = mychromos[len(mychromos)-1]
-            bestloaded = getBestLoaded()
-            worstloaded = getWorstLoaded()
-            if bestchromo[1] > bestloaded[1]:
-                writeBest(bestchromo)
-            if worstchromo[1] < worstloaded[1]:
-                writeWorst(worstchromo)
+                #sort based on fitness
+                mychromos = sorted(mychromos,key=lambda fit_level:chromo[1])
+                #compare to saved chromos and update
+                bestchromo = mychromos[0]
+                worstchromo = mychromos[len(mychromos)-1]
+                bestloaded = getBestLoaded()
+                worstloaded = getWorstLoaded()
+                if bestchromo[1] > bestloaded[1]:
+                    writeBest(bestchromo)
+                    "Saved new best chromo!"
+                if worstchromo[1] < worstloaded[1]:
+                    writeWorst(worstchromo)
+                    "Saved new worst chromo!"
             
             mychromos = newPopulation(mychromos)
             saveable_chromos = mychromos[:]
