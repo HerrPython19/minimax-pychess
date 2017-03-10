@@ -137,6 +137,7 @@ else:
 
 #Print instructions to play game, mostly text commands
 print "\n####--------------------Instructions------------------####"
+print "White is CAPITAL letters, black is lowercase letters."
 print "Moves: Type the 'from' square, followed by the 'to' square."
 print "For example, 'a3a5' (without quotes) would move whatever piece is in a3 to a5"
 print "Type 'quit' (without quotes) to quit the game."

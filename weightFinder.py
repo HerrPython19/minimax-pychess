@@ -20,11 +20,9 @@ def createPopulation(amount):
 #for each move, these weights try to guess the best move.
 #for each correct best move +1 to subtotal.
 #after every move has been analyzed, return the fitness as correct/total moves
-def fitness(chromo, game, engine):
+def fitness(chromo, game, engine, randstart, randend):
     board = chess.Board()
     
-    randstart = random.randint(0,len(game)-25)
-    randend=randstart+15
     #set up game
     moveindex = 0
     while moveindex != randstart:
@@ -128,13 +126,16 @@ def do_ga():
     bestchromo = None
     worstchromo = None
     #mac
-    #engine = chess.uci.popen_engine("stockfish/src/./stockfish")
+    engine = chess.uci.popen_engine("stockfish/src/./stockfish")
     #windows
-    engine = chess.uci.popen_engine("stockfish-8-win/windows/stockfish_8_x64.exe")
+    #engine = chess.uci.popen_engine("stockfish-8-win/windows/stockfish_8_x64.exe")
     try:
         while True:
+            mygame = randomGame()
+            randstart = random.randint(0,len(mygame)-25)
+            randend=randstart+15
             for chromo in mychromos:
-                chromo[1] = fitness(chromo[0],randomGame(),engine)
+                chromo[1] = fitness(chromo[0],mygame,engine,randstart,randend)
                 #sort based on fitness
                 mychromos = sorted(mychromos,key=lambda fit_level:chromo[1])
                 #compare to saved chromos and update
