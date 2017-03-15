@@ -1,4 +1,7 @@
-import time, chess
+import time, chess, random
+#TODO: Need to rewrite static eval and all subfunctions so they always return
+#positive nums for white advantage, and neg for black advantage.
+#Right now there are too many if statements when we can just if at a higher lvl
 class alphaBetaMinimaxAI:
     def __init__(self, computer, board, depth=4):
         #true if computer is white, false if black
@@ -9,15 +12,74 @@ class alphaBetaMinimaxAI:
         self.is_endgame = None
         self.pieces = []
         #weights
-        self.weights = [1.2457976042171892, 2.814057303694697,
-                        2.1997960852909744, 2.042135771164711,
-                        0.08116019184038237, 2.309452153105518]
-        self.materialWeight = self.weights[0]
-        self.spaceWeight = self.weights[1]
-        self.protectionWeight = self.weights[2]
-        self.advancementWeight = self.weights[3]
-        self.attackWeight = self.weights[4]
-        self.controlWeight = self.weights[5]
+        #these weights were alright for opening, favored player a little but
+        #generally didn't make crappy moves until middlegame
+        self.weights = [0.6610252671025243, 0.14746762196272734,
+                        0.035314843815057895, 0.1450064571930012,
+                        0.00337468881998515, 0.4465372840233156,
+                        0.39861131680005335, 0.2661141817872975,
+                        0.8522249370173077]
+        #this one made a good capturing decision midgame, next one wasn't great
+        self.weights = [0.43856436863747583, 0.828205185395219,
+                        0.3929110648105536, 0.14871024262102572,
+                        0.7448884346973312, 0.6342878309315679,
+                        0.09602702464270996, 0.25115141492337434,
+                        0.6267254479075831]
+        #this one made two good consecutive captures midgame
+        self.weights = [0.2932135393466129, 0.081927501911925,
+                        0.09273895992191383, 0.460039787834428,
+                        0.9660319248274083, 0.5812350795491669,
+                        0.08837222384835564, 0.7094273059692161,
+                        0.9556160667464879]
+        #self.weights = [1,.5,.4,.8,.5,.1,1,.5,1]
+        self.setWeights(self.weights)
+
+    def setWeights(self, weights):
+        self.materialWeight = weights[0]
+        self.spaceWeight = weights[1]
+        self.vulnWeight = weights[2]
+        self.protectionWeight = weights[3]
+        self.advancementWeight = weights[4]
+        self.attackWeight = weights[5]
+        self.controlWeight = weights[6]
+        self.kingSafetyWeight = weights[7]
+        self.doubleMoveWeight = weights[8]
+
+    def randWeights(self):
+        return [random.random(),random.random(),random.random(),
+		random.random(),random.random(),random.random(),
+		random.random(),random.random(),random.random()]
+
+    def kingSafety(self):
+        total = 0
+        computerKing = None
+        playerKing = None
+        #define the comp/player kings
+        for piece in self.pieces:
+            if str(piece[0]) == "k":
+                if self.computer:
+                    playerKing = piece
+                else:
+                    computerKing = piece
+            elif str(piece[0]) == "K":
+                if self.computer:
+                    computerKing = piece
+                else:
+                    playerKing = piece
+
+        if computerKing[0].color:
+            if computerKing[1] > 7:
+                total -= 1
+            if playerKing[1] < 56:
+                total += 1
+                
+        elif not computerKing[0].color:
+            if computerKing[1] < 56:
+                total -= 1
+            if playerKing[1] > 7:
+                total += 1
+                
+        return total
 
     def sumPieces(self):
         total = 0
@@ -54,27 +116,65 @@ class alphaBetaMinimaxAI:
             if self.board.turn == self.computer:
                 return -1
             else:
-                return 1
+                return 0
         else:
             return 0
 
     def sumOpenSpace(self):
         computerValue = 0
         playerValue = 0
+        compqueen = "null"
+        playerqueen = "null"
+        cturn = False
+        
+        for piece in self.pieces:
+            if str(piece) == "Q":
+                if self.computer:
+                    compqueen = str(piece[1])
+                else:
+                    playerqueen = str(piece[1])
+            if str(piece) == "q":
+                if self.computer:
+                    playerqueen = str(piece[1])
+                else:
+                    compqueen = str(piece[1])
+        if self.board.turn != self.computer:
+            self.board.turn = not self.board.turn
+            cturn = False
+            
         if self.board.turn == self.computer:
-            computerValue += len(self.board.legal_moves)
+            for move in self.board.pseudo_legal_moves:
+                if not str(move)[:2] == compqueen[:2]:
+                    computerValue += 1
             self.board.turn = not self.board.turn
-            playerValue += len(self.board.legal_moves)
-            self.board.turn = not self.board.turn
-        else:
-            playerValue += len(self.board.legal_moves)
-            self.board.turn = not self.board.turn
-            computerValue += len(self.board.legal_moves)
-            self.board.turn = not self.board.turn
+            for move in self.board.pseudo_legal_moves:
+                if not str(move)[:2] == playerqueen[:2]:
+                    playerValue += 1
+
+            if cturn:
+                self.board.turn = not self.board.turn
 
         if playerValue == 0:
             playerValue = 1
         return float(computerValue)/playerValue
+
+    def vulnerablePieces(self):
+        compVulns = 1
+        playerVulns = 1
+        piece_values = {"p":1,"b":3,"n":3,"r":5,"q":9,"k":0}
+        for item in self.pieces:
+            piece = item[0]
+            square = item[1]
+            if piece.color == self.computer:
+                if self.board.is_attacked_by(not self.computer,square)\
+                   and not self.board.is_attacked_by(self.computer,square):
+                    compVulns += piece_values[str(piece).lower()]
+            else:
+                if self.board.is_attacked_by(self.computer,square) and not\
+                   self.board.is_attacked_by(not self.computer, square):
+                    playerVulns -= piece_values[str(piece).lower()]
+
+        return playerVulns/float(compVulns)
 
     def capturedPiece(self):
         if len(self.board.stack) > 1:
@@ -90,7 +190,7 @@ class alphaBetaMinimaxAI:
 
     def piecesProtected(self):
         total = 0
-        piece_values = {"p":.1,"b":.2,"n":.2,"r":.4,"q":.6,"k":0}
+        piece_values = {"p":.1,"b":.3,"n":.3,"r":.5,"q":.9,"k":0}
         for item in self.pieces:
             piece = item[0]
             square = item[1]
@@ -111,13 +211,11 @@ class alphaBetaMinimaxAI:
 
     def advancingPieces(self):
         total = 0
-        piece_values = {"p":.3,"b":.6,"n":.6,"r":.4,"q":.4,"k":.1}
-        file_values = {"a":3,"b":4,"c":5,"d":6,"e":6,"f":5,"g":4,"h":3}
+        piece_values = {"p":.1,"b":.3,"n":.3,"r":.2,"q":.2,"k":.0}
         for item in self.pieces:
             piece = item[0]
             square = item[1]
             rank = int(chess.SQUARE_NAMES[square][1])
-            pfile = file_values[chess.SQUARE_NAMES[square][0]]
             pName = str(piece).lower()
             if piece.color == self.computer:
                 if self.computer:
@@ -178,7 +276,7 @@ class alphaBetaMinimaxAI:
 
     def totalAttacks(self):
         total = 0
-        piece_values = {"p":1,"b":1.2,"n":1.2,"r":1.4,"q":2,"k":.1}
+        piece_values = {"p":.1,"b":.3,"n":.3,"r":.5,"q":.9,"k":0}
         for item in self.pieces:
             piece = item[0]
             square = item[1]
@@ -188,7 +286,7 @@ class alphaBetaMinimaxAI:
                 squares = self.genAttackingSquares(attacks)
                 attackingPawns = self.pawnsAttackingPiece(squares)
                 if str(piece).lower() != "p" and attackingPawns != []:
-                    total -= 1.5*len(attackingPawns)
+                    total -= 2*len(attackingPawns)
                 total -= len(attacks)*piece_values[str(piece).lower()]
             else:
                 attacks = self.board.attackers(self.computer, square)
@@ -196,10 +294,17 @@ class alphaBetaMinimaxAI:
                 squares = self.genAttackingSquares(attacks)
                 attackingPawns = self.pawnsAttackingPiece(squares)
                 if str(piece).lower() != "p" and attackingPawns != []:
-                    total += 1.5*len(attackingPawns)
+                    total += 2*len(attackingPawns)
                 total += len(attacks)*piece_values[str(piece).lower()]
 
         return total
+
+    def doubleMove(self):
+        #only a penalty for the computer for right now
+        if self.computer:
+            if self.samePieceTwice(self.board.move_stack[len(self.board.move_stack)-1].uci()):
+                    return -1
+        return 0
 
     def isEndgame(self):
         if len(self.board.stack) >= 70:
@@ -219,7 +324,7 @@ class alphaBetaMinimaxAI:
                 self.pieces.append((piece,square))
                     
     def staticEval(self):
-        checkWeight = 10
+        checkWeight = 5
         checkmateWeight = 9999
         
         self.setPieces()
@@ -231,6 +336,7 @@ class alphaBetaMinimaxAI:
         checkmateTotal = self.checkmate()*checkmateWeight
         #how much open space do we have available
         openSpace = self.sumOpenSpace()*self.spaceWeight
+        vulns = self.vulnerablePieces()*self.vulnWeight
         #are pieces protected?
         protectionValue = self.piecesProtected()*self.protectionWeight
         #how advanced are the pieces?
@@ -239,10 +345,12 @@ class alphaBetaMinimaxAI:
         attacks = self.totalAttacks()*self.attackWeight
         #control of the center, very important
         control = self.centerControl()*self.controlWeight
+        kingSafety = self.kingSafety()*self.kingSafetyWeight
+ #       doubleMoved = self.doubleMove()*self.doubleMoveWeight
         
-        return [pieceTotal,checkTotal,checkmateTotal,openSpace,
-                protectionValue,pieceAdvancement,attacks,
-                control,self.board.fen()]
+        return [pieceTotal,openSpace,vulns,protectionValue,
+                pieceAdvancement,attacks,control,kingSafety,
+                checkTotal,checkmateTotal,self.board.fen()]
 
     #requires move as a uci string, not a move object
     def badMove(self, move):

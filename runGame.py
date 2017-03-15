@@ -58,7 +58,7 @@ def moveIsPromoting(board,uci_move):
 #when we update the ai.
 def getAIMove(ai):
     global debugging
-    timelimit = 60 #seconds. Is NOT a guarantee that it will finish in time
+    timelimit = 120 #seconds. Is NOT a guarantee that it will finish in time
     move = ai.getMove(timelimit)
     if debugging:
         print move
@@ -206,4 +206,4 @@ else:
 
 print "\n#####Final board#####"
 printBoard(board,player)
-raw_input("\nPress enter to quit.")
+raw_input("\nPress enter to quit.\n")
