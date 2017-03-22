@@ -51,24 +51,23 @@ def fitness(chromo, fen):
                      'g2g4': -1.35, 'b2c1': -2.14,
                      'd1c1': -1.37, 'b2c3': -5.57,
                      'f3h4': -4.74, 'b2e5': -2.06}
-    elif fen == "r2qk1n1/1p3pBr/2nPb2p/3p4/pp6/5N2/P1P1PPPP/R2QKBR1 w Qq - 1 13":
-        fitnesses = {'f3d2': -5.18, 'f3d4': -4.37,
-                     'a1b1': -4.08, 'g7c3': -3.46,
-                     'g7e5': -.23, 'c2c3': -3.34,
-                     'c2c4': -1.85, 'd1d5': -11.74,
-                     'd1d4': -7.19, 'd1b1': -4.3,
-                     'd1d3': -4.21, 'd1d2': -3.8,
-                     'g7h8': -4.08, 'g7h6': -3.55,
-                     'a2a3': -4.11, 'f3e5': -4.18,
-                     'e2e3': -3.93, 'a1c1': -3.95,
-                     'e1d2': -5.16, 'd6d7': -.15,
-                     'g7f6': -4.93, 'h2h3': -4.51,
-                     'g7d4': -.09, 'g1h1': -4.59,
-                     'g7b2': -.12, 'g7f8': -4.65,
-                     'f3g5': -5.17, 'g2g3': -4.16,
-                     'e2e4': -2.76, 'g2g4': -4.33,
-                     'd1c1': -4.22, 'h2h4': -4.6,
-                     'f3h4': -5.29}
+    elif fen == "r1bq1rk1/pppp1ppp/2n2n2/1B2p3/1b2P3/2N2N2/PPPP1PPP/R1BQ1RK1 w - - 8 6":
+        fitnesses = {'f3d4': -4.47, 'a1b1': -.1,
+                     'd2d4': .2, 'd2d3': 0,
+                     'c3d5': .11, 'b5d3': -.27,
+                     'f3h4': -1.08, 'b2b3': -.46,
+                     'f1e1': .04, 'c3e2': -.22,
+                     'c3a4': -.57, 'a2a3': -.09,
+                     'f3e5': -1.92, 'a2a4': -.08,
+                     'f3e1': -.91, 'h2h4': -.61,
+                     'h2h3': -.11, 'g1h1': -.35,
+                     'f3g5': -.67, 'd1e2': -.25,
+                     'g2g3': -.89, 'b5e2': -1,
+                     'd1e1': -.42, 'g2g4': -1.42,
+                     'c3b1': -.7, 'b5a4': -.22,
+                     'b5a6': -3.68, 'b5c6': 0,
+                     'b5c4': -.16}
+        
     elif fen == "1r1q1kn1/1p5r/2nPb2p/3p1p2/pp6/P3PN2/1BP2PPP/R2QKBR1 w Q - 1 16":
         fitnesses = {'f3d2': .45, 'f3d4': 1.39,
                      'a3b4': 1.58, 'a1b1': 1.08,
@@ -98,7 +97,7 @@ def cumulativeFitness(chromo):
     added = fitness(chromo,board.fen())
     print added
     total = added
-    board.set_fen("r2qk1n1/1p3pBr/2nPb2p/3p4/pp6/5N2/P1P1PPPP/R2QKBR1 w Qq - 1 13")
+    board.set_fen("r1bq1rk1/pppp1ppp/2n2n2/1B2p3/1b2P3/2N2N2/PPPP1PPP/R1BQ1RK1 w - - 8 6")
     added = fitness(chromo,board.fen())
     print added
     total += added
@@ -169,6 +168,9 @@ def writeWorst(chromo):
 
 def do_ga():
     amount = 15
+    f = open("all_chromos.ga","rb")
+    mychromos = cPickle.load(f)
+    f.close()
     mychromos = createPopulation(amount)
     saveable_chromos = mychromos[:]
     mutation_rate = .25
@@ -181,22 +183,24 @@ def do_ga():
     try:
         while True:
             for chromo in mychromos:
-                chromo[1] = cumulativeFitness(chromo[0])
-                #sort based on fitness
-                mychromos = sorted(mychromos,key=lambda fit_level:chromo[1])
-                #compare to saved chromos and update
-                bestchromo = mychromos[0]
-                worstchromo = mychromos[len(mychromos)-1]
-                bestloaded = getBestLoaded()
-                worstloaded = getWorstLoaded()
-                if bestchromo[1] > bestloaded[1]:
-                    writeBest(bestchromo)
-                    print "Saved new best chromo!"
-                if worstchromo[1] < worstloaded[1]:
-                    writeWorst(worstchromo)
-                    print "Saved new worst chromo!"
-                print "Final fitness is: " + str(chromo[1])
-            
+                if chromo[1] == 0:
+                    chromo[1] = cumulativeFitness(chromo[0])
+                    #compare to saved chromos and update
+                    bestloaded = getBestLoaded()
+                    worstloaded = getWorstLoaded()
+                    if chromo[1] > bestloaded[1]:
+                        writeBest(chromo)
+                        print "Saved new best chromo!"
+                    if chromo[1] < worstloaded[1]:
+                        writeWorst(chromo)
+                        print "Saved new worst chromo!"
+                    print "Final fitness is: " + str(chromo[1]) + " for " + str(chromo[0])
+
+            #sort based on fitness
+            mychromos = sorted(mychromos,key=lambda x:x[1])
+            mychromos.reverse()
+            print "Final chromos before new pop:"
+            print mychromos
             mychromos = newPopulation(amount,mychromos,mutation_rate)
             saveable_chromos = mychromos[:]
             

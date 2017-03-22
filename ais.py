@@ -14,23 +14,11 @@ class alphaBetaMinimaxAI:
         #weights
         #these weights were alright for opening, favored player a little but
         #generally didn't make crappy moves until middlegame
-        self.weights = [0.6610252671025243, 0.14746762196272734,
-                        0.035314843815057895, 0.1450064571930012,
-                        0.00337468881998515, 0.4465372840233156,
-                        0.39861131680005335, 0.2661141817872975,
-                        0.8522249370173077]
-        #this one made a good capturing decision midgame, next one wasn't great
-        self.weights = [0.43856436863747583, 0.828205185395219,
-                        0.3929110648105536, 0.14871024262102572,
-                        0.7448884346973312, 0.6342878309315679,
-                        0.09602702464270996, 0.25115141492337434,
-                        0.6267254479075831]
-        #this one made two good consecutive captures midgame
-        self.weights = [0.2932135393466129, 0.081927501911925,
-                        0.09273895992191383, 0.460039787834428,
-                        0.9660319248274083, 0.5812350795491669,
-                        0.08837222384835564, 0.7094273059692161,
-                        0.9556160667464879]
+        self.weights = [0.6031664325329334, 0.26609602512060027,
+                        0.7950953033824536, 0.7536484927819189,
+                        0.9124607897749692, 0.5791552462974463,
+                        0.5999260632967787, 0.30848729751605497,
+                        0.4207970707496148]
         #self.weights = [1,.5,.4,.8,.5,.1,1,.5,1]
         self.setWeights(self.weights)
 
@@ -83,7 +71,7 @@ class alphaBetaMinimaxAI:
 
     def sumPieces(self):
         total = 0
-        piece_values = {"p":1,"b":3,"n":3,"r":5,"q":9,"k":0}
+        piece_values = {"p":1,"b":3,"n":200,"r":5,"q":9,"k":0}
         for item in self.pieces:
             piece = item[0]
             #if piece is black
