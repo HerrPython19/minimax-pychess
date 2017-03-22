@@ -24,7 +24,7 @@ def createPopulation(amount):
     for i in range(amount):
         chromo = []
         for weight in range(9):
-            chromo.append(random.random())
+            chromo.append(round(random.random(),2))
         chromos.append([chromo,0])
     return chromos
 #gets fitness for given fen and move
@@ -146,7 +146,7 @@ def mutate(chromo,rate):
     do_mutate = random.randint(0,myrange)
     if do_mutate == 0:
         spot = random.randint(0,len(chromo)-1)
-        chromo[spot] = random.random()
+        chromo[spot] = round(random.random(),2)
 
 def randomGame():
     allfiles = os.listdir(os.getcwd()+"/uci_games")

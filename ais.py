@@ -12,13 +12,11 @@ class alphaBetaMinimaxAI:
         self.is_endgame = None
         self.pieces = []
         #weights
-        #these weights were alright for opening, favored player a little but
-        #generally didn't make crappy moves until middlegame
-        self.weights = [0.6031664325329334, 0.26609602512060027,
-                        0.7950953033824536, 0.7536484927819189,
-                        0.9124607897749692, 0.5791552462974463,
-                        0.5999260632967787, 0.30848729751605497,
-                        0.4207970707496148]
+        self.weights = [0.3518058423957411, 0.2760827144880148,
+                        0.27309375585545215, 0.8716154147207045,
+                        0.7426205329518232, 0.5508136520419873,
+                        0.425944175533861, 0.2959834137069064,
+                        0.3440678660497377]
         #self.weights = [1,.5,.4,.8,.5,.1,1,.5,1]
         self.setWeights(self.weights)
 
@@ -71,7 +69,7 @@ class alphaBetaMinimaxAI:
 
     def sumPieces(self):
         total = 0
-        piece_values = {"p":1,"b":3,"n":200,"r":5,"q":9,"k":0}
+        piece_values = {"p":1,"b":3,"n":3,"r":5,"q":9,"k":0}
         for item in self.pieces:
             piece = item[0]
             #if piece is black
