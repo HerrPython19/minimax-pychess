@@ -89,6 +89,19 @@ def fitness(chromo, fen):
                      'd1c1': .93, 'b2c3': -3.31,
                      'f1b5': .73, 'f3h4': -2.54,
                      'b2e5': 1.3}
+
+    elif fen == "rnbqk1nr/pppp1ppp/8/8/Nb2p3/5N2/PPPPPPPP/R1BQKB1R w KQkq - 0 4":
+        fitnesses = {'h1g1': -2.4, 'c2c3': -.66,
+                     'f3e5': -1.23, 'f3d4': -.66,
+                     'c2c4': -2.27, 'a4b6': -4.34,
+                     'a1b1': -2.95, 'g2g3': -2.71,
+                     'h2h4': -2.81, 'b2b3': -2.6,
+                     'e2e3': -2.41, 'f3h4': -3.38,
+                     'a2a3': -.62, 'a4c5': -3.94,
+                     'h2h3': -2.73, 'g2g4': -2.56,
+                     'f3g1': -1.28, 'f3g5': -3.29,
+                     'a4c3': -2.79}
+
     mymove = myai.getMove()[1]
     return fitnesses[mymove]
 
@@ -102,6 +115,10 @@ def cumulativeFitness(chromo):
     print added
     total += added
     board.set_fen("1r1q1kn1/1p5r/2nPb2p/3p1p2/pp6/P3PN2/1BP2PPP/R2QKBR1 w Q - 1 16")
+    added = fitness(chromo,board.fen())
+    print added
+    total += added
+    board.set_fen("rnbqk1nr/pppp1ppp/8/8/Nb2p3/5N2/PPPPPPPP/R1BQKB1R w KQkq - 0 4")
     added = fitness(chromo,board.fen())
     print added
     total += added
