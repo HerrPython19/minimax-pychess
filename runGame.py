@@ -58,7 +58,7 @@ def moveIsPromoting(board,uci_move):
 #when we update the ai.
 def getAIMove(ai):
     global debugging
-    timelimit = 60 #seconds. Is NOT a guarantee that it will finish in time
+    timelimit = 120 #seconds. Is NOT a guarantee that it will finish in time
     move = ai.getMove(timelimit)
     if debugging:
         print move
@@ -215,9 +215,7 @@ def getSquare(pos, player):
             
     return str(myfile+myrank).lower()
 
-def drawScreen(myscreen,fen,sheet,sprites,player,selectedSquare):
-    myboard = chess.Board()
-    myboard.set_fen(fen)
+def drawScreen(myscreen,myboard,sheet,sprites,player,selectedSquare):
     myfont = pygame.font.SysFont("calibri",30)
     lbl_white = myfont.render("White",1,(255,206,158))
     lbl_black = myfont.render("Black",1,(209,139,71))
@@ -245,6 +243,11 @@ def drawScreen(myscreen,fen,sheet,sprites,player,selectedSquare):
 
             bg = (209,139,71) if (i+j) % 2 == 0 else (255,206,158)
             pygame.draw.rect(myscreen,bg,(x,y,64,64))
+            if len(myboard.move_stack) > 0:
+                from_sq = strToSquare(myboard.move_stack[-1].uci()[:2].upper())
+                to_sq = strToSquare(myboard.move_stack[-1].uci()[2:4].upper())
+                if count == from_sq or count == to_sq:
+                    pygame.draw.rect(myscreen,(165,229,91),(x+4,y+4,56,56))
 
             piece = myboard.piece_at(count)
             if piece != None:
@@ -252,10 +255,12 @@ def drawScreen(myscreen,fen,sheet,sprites,player,selectedSquare):
                 rect = pygame.Rect(x,y,64,64)
                 myscreen.blit(sprite,rect)
 
+                #if user has selected a square and we're on that square,
+                #draw a border around it to show selection
                 if selectedSquare != None:
                     if count == strToSquare(selectedSquare.upper()):
                         pygame.draw.rect(myscreen,(0,0,255),
-                                     (x,y+1,62,63),4)
+                                     (x+1,y+1,62,62),4)
             
             count += 1
 
@@ -348,10 +353,10 @@ promotionMove = ""
 makeAIMove = False
 AIMoving = False
 user_input = ""
-currfen = board.fen()
+board_copy = board.copy()
 
 def runAI():
-    global makeAIMove, AIMoving, board, currfen
+    global makeAIMove, AIMoving, board, board_copy
     while user_input != "quit":
         time.sleep(.25)
         if makeAIMove:
@@ -361,7 +366,7 @@ def runAI():
             print "Opponent makes move: " + str(move)
             board.push_uci(str(move))
             printBoard(board,player)
-            currfen = board.fen()
+            board_copy = board.copy()
             AIMoving = False
             makeAIMove = False
 
@@ -369,13 +374,13 @@ t = threading.Thread(target=runAI,args=())
 t.start()
 
 if player != board.turn:
-    drawScreen(screen,currfen,sheet,all_sprites,player,selectedSquare)
+    drawScreen(screen,board_copy,sheet,all_sprites,player,selectedSquare)
     pygame.display.flip()
     makeAIMove = True
 
 #as long as the game is still going, and the user hasn't entered 'quit', keep playing
 while (not user_input == "quit"):
-    drawScreen(screen,currfen,sheet,all_sprites,player,selectedSquare)
+    drawScreen(screen,board_copy,sheet,all_sprites,player,selectedSquare)
     if promoting:
         drawPromotion(screen,all_sprites,player)
     pygame.display.flip()
@@ -433,9 +438,9 @@ while (not user_input == "quit"):
                     selectedSquare = None
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_s and not makeAIMove:
                 user_input = "save"
-            if event.key == pygame.K_z:
+            if event.key == pygame.K_z and not makeAIMove:
                 user_input = "undo"
 
     if moveIsPromoting(board,user_input):
@@ -451,7 +456,7 @@ while (not user_input == "quit"):
             if len(board.stack) > 1:
                 board.pop()
                 board.pop()
-                currfen = board.fen()
+                board_copy = board.copy()
                 print "You and your opponent's previous moves have been undone."
             else:
                 print "You haven't made any moves yet!"
@@ -476,7 +481,7 @@ while (not user_input == "quit"):
             makeAIMove = True
         else:
             board.push_uci(user_input)
-            currfen = board.fen()
+            board_copy = board.copy()
             print "You made move: " + user_input
             makeAIMove = True
             

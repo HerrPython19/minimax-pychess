@@ -12,7 +12,7 @@ class alphaBetaMinimaxAI:
         self.is_endgame = None
         self.pieces = []
         #weights
-        self.weights = [.97,.5,.48,.38,.56,.91,.37,.36,.25]
+        self.weights = [.97,.89,.48,.38,.65,.91,.37,.36,.25]
         #self.weights = [1,.5,.4,.8,.5,.1,1,.5,1]
         self.setWeights(self.weights)
 
