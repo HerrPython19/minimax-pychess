@@ -68,27 +68,27 @@ def fitness(chromo, fen):
                      'b5a6': -3.68, 'b5c6': 0,
                      'b5c4': -.16}
         
-    elif fen == "1r1q1kn1/1p5r/2nPb2p/3p1p2/pp6/P3PN2/1BP2PPP/R2QKBR1 w Q - 1 16":
-        fitnesses = {'f3d2': .45, 'f3d4': 1.39,
-                     'a3b4': 1.58, 'a1b1': 1.08,
-                     'e1e2': .81, 'f1d3': 1.58,
-                     'e3e4': -.25, 'c2c4': .74,
-                     'd1d5': -9.78, 'd1d4': -5.77,
-                     'd1b1': 1.21, 'd1d3': 1.77,
-                     'd1d2': 1.54, 'f1e2': 1.71,
-                     'a1a2': .91, 'b2d4': 1.39,
-                     'b2f6': -3.94, 'a1c1': .17,
-                     'b2h8': -2.52, 'f3e5': 2.09,
-                     'c2c3': .16, 'f1a6': -1.91,
-                     'e1d2': 1.08, 'd6d7': 1.79,
-                     'f1c4': -1.75, 'h2h4': 1.2,
-                     'h2h3': 1.51, 'g1h1': 1.18,
-                     'f3g5': -3.57, 'd1e2': 1.27,
-                     'g2g3': 1.52, 'b2g7': -3.37,
-                     'g2g4': 1.62, 'b2c1': .45,
-                     'd1c1': .93, 'b2c3': -3.31,
-                     'f1b5': .73, 'f3h4': -2.54,
-                     'b2e5': 1.3}
+    elif fen == "r3k2r/pppq2pp/2np1n2/2b1p1Q1/4P3/2NP1P1b/PPP4P/R3KB1R w KQkq - 1 12":
+        fitnesses = {'g5g1': -16.51, 'h1g1': -11.10,
+                     'g5g3': -9.97, 'a1d1': -11.59,
+                     'g5g4': -18.4, 'g5g7': -19.72,
+                     'g5g6': -20.91, 'a1b1': -10.57,
+                     'g5f5': -18.8, 'c3d1': -12.47,
+                     'c3d5': -9.6, 'g5g2': -15.32,
+                     'f1h3': -8.56, 'g5e3': -21.83,
+                     'd3d4': -10.38, 'g5c1': -12.02,
+                     'g5e5': -19.53, 'f3f4': -9.43,
+                     'b2b4': -14.55, 'b2b3': -12.18,
+                     'f1e2': -9.41, 'e1c1': -8.83,
+                     'c3e2': -9.16, 'f1g2': -9.04,
+                     'c3a4': -9.18, 'g5f6': -15.3,
+                     'a2a3': -9.03, 'g5f4': -20.9,
+                     'e1e2': -12.14, 'a2a4': -9.6,
+                     'g5h4': -9.41, 'g5h5': -21.12,
+                     'a1c1': -10.29, 'e1d2': -9.91,
+                     'e1d1': -10.23, 'g5h6': -20.45,
+                     'g5d2': -9.46, 'c3b1': -11.3,
+                     'c3b5': -9.45}
 
     elif fen == "rnbqk1nr/pppp1ppp/8/8/Nb2p3/5N2/PPPPPPPP/R1BQKB1R w KQkq - 0 4":
         fitnesses = {'h1g1': -2.4, 'c2c3': -.66,
@@ -114,7 +114,7 @@ def cumulativeFitness(chromo):
     added = fitness(chromo,board.fen())
     print added
     total += added
-    board.set_fen("1r1q1kn1/1p5r/2nPb2p/3p1p2/pp6/P3PN2/1BP2PPP/R2QKBR1 w Q - 1 16")
+    board.set_fen("r3k2r/pppq2pp/2np1n2/2b1p1Q1/4P3/2NP1P1b/PPP4P/R3KB1R w KQkq - 1 12")
     added = fitness(chromo,board.fen())
     print added
     total += added
@@ -183,12 +183,21 @@ def writeWorst(chromo):
     cPickle.dump(chromo,f)
     f.close()
 
+def clearSavedChromos():
+    f = open("best.chromo","wb")
+    cPickle.dump([[0,0,0,0,0,0,0,0,0],-999],f)
+    f.close()
+
+    f = open("worst.chromo","wb")
+    cPickle.dump([[0,0,0,0,0,0,0,0,0],999],f)
+    f.close()
+
 def do_ga():
     amount = 15
     f = open("all_chromos.ga","rb")
     mychromos = cPickle.load(f)
     f.close()
-    mychromos = createPopulation(amount)
+    #mychromos = createPopulation(amount)
     saveable_chromos = mychromos[:]
     mutation_rate = .25
     bestchromo = None
@@ -212,6 +221,7 @@ def do_ga():
                         writeWorst(chromo)
                         print "Saved new worst chromo!"
                     print "Final fitness is: " + str(chromo[1]) + " for " + str(chromo[0])
+                    print "Is " + str(-9.02-chromo[1]) + " below max of -9.02"
 
             #sort based on fitness
             mychromos = sorted(mychromos,key=lambda x:x[1])

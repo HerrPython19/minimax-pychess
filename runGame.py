@@ -2,7 +2,7 @@
 #After we get user input, we test its validity. If it's valid, we do it
 #if it's invalid, report back to player, print board again, and ask for input
 #if it's "undo" then pop the last player and ai moves, and print the board.
-import chess, random, ais,traceback, cPickle, pygame,time,threading
+import chess, random, ais,traceback, cPickle, pygame,time,threading,sys
 debugging = True
 #prints the board, showing ranks and files. Flips the board if the player is black
 def printBoard(board,player):
@@ -56,9 +56,9 @@ def moveIsPromoting(board,uci_move):
 #aiObject.getMove(board)
 #it's in place so that the main game-playing code won't need to be changed
 #when we update the ai.
-def getAIMove(ai):
+def getAIMove(ai, mytime):
     global debugging
-    timelimit = 120 #seconds. Is NOT a guarantee that it will finish in time
+    timelimit = mytime #seconds. Is NOT a guarantee that it will finish in time
     move = ai.getMove(timelimit)
     if debugging:
         print move
@@ -321,6 +321,16 @@ if player == None:
         print "Invalid input. Please type w or b for white or black."
         player = raw_input(">>> ").lower()
 
+time_input = raw_input("Enter time limit for AI (in seconds, 0 for unlimited)\n>>> ")
+time_complete = False
+while not time_complete:
+    try:
+        time_input = int(time_input)
+        time_complete = True
+    except:
+        print "Invalid input. Please type a number."
+        time_input = raw_input(">>> ")
+
 if player == "w" or player == True:
     player = True
     opponent = ais.alphaBetaMinimaxAI(False,board)
@@ -330,14 +340,14 @@ else:
     opponent = ais.alphaBetaMinimaxAI(True,board)
 
 #Print instructions to play game, mostly text commands
-print "\n####--------------------Instructions------------------####"
-print "White is CAPITAL letters, black is lowercase letters."
-print "Moves: Type the 'from' square, followed by the 'to' square."
-print "For example, 'a3a5' (without quotes) would move whatever piece is in a3 to a5"
-print "Type 'quit' (without quotes) to quit the game."
-print "Type 'undo' (without quotes) to undo your last move."
-print "Type 'save' (without quotes) to save the game."
-print "####--------------------------------------------------####\n"
+#print "\n####--------------------Instructions------------------####"
+#print "White is CAPITAL letters, black is lowercase letters."
+#print "Moves: Type the 'from' square, followed by the 'to' square."
+#print "For example, 'a3a5' (without quotes) would move whatever piece is in a3 to a5"
+#print "Type 'quit' (without quotes) to quit the game."
+#print "Type 'undo' (without quotes) to undo your last move."
+#print "Type 'save' (without quotes) to save the game."
+#print "####--------------------------------------------------####\n"
 #initialize pygame
 pygame.init()
 screen = pygame.display.set_mode((512,612))
@@ -362,7 +372,7 @@ def runAI():
         if makeAIMove:
             AIMoving = True
             print "Opponent is thinking..."
-            move = getAIMove(opponent)
+            move = getAIMove(opponent, time_input)
             print "Opponent makes move: " + str(move)
             board.push_uci(str(move))
             printBoard(board,player)
@@ -390,6 +400,7 @@ while (not user_input == "quit"):
         if event.type == pygame.QUIT:
             user_input == "quit"
             pygame.quit()
+            sys.exit()
         if event.type == pygame.MOUSEBUTTONUP and not makeAIMove:
             pos = pygame.mouse.get_pos()
             if promoting:

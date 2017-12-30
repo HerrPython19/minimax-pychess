@@ -12,7 +12,7 @@ class alphaBetaMinimaxAI:
         self.is_endgame = None
         self.pieces = []
         #weights
-        self.weights = [.97,.89,.48,.38,.65,.91,.37,.36,.25]
+        self.weights = [0.61, 0.23, 0.38, 0.35, 0.39, 0.41, 0.9, 0.11, 0.05]
         #self.weights = [1,.5,.4,.8,.5,.1,1,.5,1]
         self.setWeights(self.weights)
 
@@ -141,8 +141,8 @@ class alphaBetaMinimaxAI:
         return float(computerValue)/playerValue
 
     def vulnerablePieces(self):
-        compVulns = 1
-        playerVulns = 1
+        compVulns = 0
+        playerVulns = 0
         piece_values = {"p":1,"b":3,"n":3,"r":5,"q":9,"k":0}
         for item in self.pieces:
             piece = item[0]
@@ -154,9 +154,9 @@ class alphaBetaMinimaxAI:
             else:
                 if self.board.is_attacked_by(self.computer,square) and not\
                    self.board.is_attacked_by(not self.computer, square):
-                    playerVulns -= piece_values[str(piece).lower()]
+                    playerVulns += piece_values[str(piece).lower()]
 
-        return playerVulns/float(compVulns)
+        return playerVulns - compVulns
 
     def capturedPiece(self):
         if len(self.board.stack) > 1:
@@ -223,14 +223,14 @@ class alphaBetaMinimaxAI:
             square = item[1]
             if square in coreCenter:
                 if piece.color == self.computer:
-                    total += 1
-                else:
-                    total -= 1
-            if square in outerCenter:
-                if piece.color == self.computer:
                     total += .5
                 else:
                     total -= .5
+            if square in outerCenter:
+                if piece.color == self.computer:
+                    total += .25
+                else:
+                    total -= .25
                     
         return total
 
@@ -318,20 +318,20 @@ class alphaBetaMinimaxAI:
         checkmateTotal = self.checkmate()*checkmateWeight
         #how much open space do we have available
         openSpace = self.sumOpenSpace()*self.spaceWeight
-        vulns = self.vulnerablePieces()*self.vulnWeight
+        #vulns = self.vulnerablePieces()*self.vulnWeight
         #are pieces protected?
-        protectionValue = self.piecesProtected()*self.protectionWeight
+        #protectionValue = self.piecesProtected()*self.protectionWeight
         #how advanced are the pieces?
         pieceAdvancement = self.advancingPieces()*self.advancementWeight
         #where are the attacks happening, and how many?
-        attacks = self.totalAttacks()*self.attackWeight
+        #attacks = self.totalAttacks()*self.attackWeight
         #control of the center, very important
         control = self.centerControl()*self.controlWeight
-        kingSafety = self.kingSafety()*self.kingSafetyWeight
+        #kingSafety = self.kingSafety()*self.kingSafetyWeight
  #       doubleMoved = self.doubleMove()*self.doubleMoveWeight
         
-        return [pieceTotal,openSpace,vulns,protectionValue,
-                pieceAdvancement,attacks,control,kingSafety,
+        return [pieceTotal,openSpace,
+                pieceAdvancement,control,
                 checkTotal,checkmateTotal,self.board.fen()]
 
     #requires move as a uci string, not a move object
